@@ -8,22 +8,29 @@ apt update
 apt upgrade -y
 
 # Install Docker for ARM64
-curl -fsSL https://get.docker.com -o get-docker.sh
-sh get-docker.sh
+curl -fsSL test.docker.com -o get-docker.sh && sh get-docker.sh
 
-# Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+sudo usermod -aG docker $USER 
+
+sudo apt install docker-compose -y
 
 # Install Nginx
-apt install nginx -y
+sudo apt install nginx -y
+
+sudo apt install certbot python3-certbot-nginx -y
+
+
 
 # Ask for domain names
 read -p "Enter your domain name for kibana: " KIBANA_DOMAIN
 read -p "Enter your domain name for elasticsearch: " ES_DOMAIN
 
+
+sudo certbot --nginx -d $KIBANA_DOMAIN -d $ES_DOMAIN
+
 # Get public IP
-PUBLIC_IP=$(curl -s ifconfig.co)
+#PUBLIC_IP=$(curl -s ifconfig.co)
+read -p "Enter Public IP: " PUBLIC_IP
 
 # Create Nginx config for Kibana
 cat <<EOF > /etc/nginx/sites-available/$KIBANA_DOMAIN
@@ -71,7 +78,7 @@ version: '3.8'
 services:
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.13.0
     platform: linux/arm64/v8
     volumes:
       - esdata:/usr/share/elasticsearch/data
@@ -84,7 +91,7 @@ services:
       - 9200:9200
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.12.2
+    image: docker.elastic.co/kibana/kibana:7.13.0
     platform: linux/arm64/v8
     volumes:
       - kibanadata:/usr/share/kibana
